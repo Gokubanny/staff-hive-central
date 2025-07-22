@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
+import Companies from "./pages/Companies";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,10 +30,7 @@ const App = () => (
           } />
           <Route path="/companies" element={
             <DashboardLayout>
-              <div className="text-center py-12">
-                <h1 className="text-2xl font-bold text-foreground mb-4">Companies</h1>
-                <p className="text-muted-foreground">Coming soon...</p>
-              </div>
+              <Companies />
             </DashboardLayout>
           } />
           <Route path="/payroll" element={
