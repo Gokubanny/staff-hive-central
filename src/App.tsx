@@ -7,6 +7,8 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import Companies from "./pages/Companies";
+import Payroll from "./pages/Payroll";
+import Applicants from "./pages/Applicants";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,18 +37,12 @@ const App = () => (
           } />
           <Route path="/payroll" element={
             <DashboardLayout>
-              <div className="text-center py-12">
-                <h1 className="text-2xl font-bold text-foreground mb-4">Payroll</h1>
-                <p className="text-muted-foreground">Coming soon...</p>
-              </div>
+              <Payroll />
             </DashboardLayout>
           } />
           <Route path="/applicants" element={
             <DashboardLayout>
-              <div className="text-center py-12">
-                <h1 className="text-2xl font-bold text-foreground mb-4">Applicants</h1>
-                <p className="text-muted-foreground">Coming soon...</p>
-              </div>
+              <Applicants />
             </DashboardLayout>
           } />
           <Route path="/resources" element={
