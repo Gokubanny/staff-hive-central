@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "./AppSidebar"
-import { Bell, User } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
+import { Bell, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -17,6 +18,16 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { user, logout } = useAuth();
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -47,9 +58,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/avatars/admin.png" alt="Admin" />
+                      <AvatarImage src="" alt={user?.firstName} />
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        AD
+                        {user && getInitials(user.firstName, user.lastName)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -57,9 +68,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Admin User</p>
+                      <p className="text-sm font-medium leading-none">
+                        {user?.firstName} {user?.lastName}
+                      </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        admin@staffhive.com
+                        {user?.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
@@ -75,8 +88,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     Support
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    Log out
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

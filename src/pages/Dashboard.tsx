@@ -1,6 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useData } from "@/contexts/DataContext"
+import { useAuth } from "@/contexts/AuthContext"
 import heroImage from "@/assets/hr-hero.jpg"
 import { 
   Users, 
@@ -13,40 +15,6 @@ import {
   Clock
 } from "lucide-react"
 
-const metrics = [
-  {
-    title: "Total Companies",
-    value: "24",
-    change: "+2 this month",
-    icon: Building2,
-    trend: "up",
-    color: "text-primary"
-  },
-  {
-    title: "Total Employees",
-    value: "1,247",
-    change: "+48 this month",
-    icon: Users,
-    trend: "up",
-    color: "text-success"
-  },
-  {
-    title: "Monthly Payroll",
-    value: "₦45.2M",
-    change: "+12% from last month",
-    icon: DollarSign,
-    trend: "up",
-    color: "text-warning"
-  },
-  {
-    title: "Pending Applicants",
-    value: "38",
-    change: "15 interviews scheduled",
-    icon: UserCheck,
-    trend: "neutral",
-    color: "text-blue-600"
-  }
-]
 
 const recentActivities = [
   {
@@ -101,13 +69,63 @@ const alerts = [
 ]
 
 export default function Dashboard() {
+  const { employees, companies, applicants, payroll } = useData();
+  const { user } = useAuth();
+
+  // Calculate dynamic metrics
+  const activeEmployees = employees.filter(emp => emp.status === 'active').length;
+  const pendingApplicants = applicants.filter(app => ['applied', 'screening', 'interview'].includes(app.stage)).length;
+  const currentMonthPayroll = payroll
+    .filter(pay => {
+      const payDate = new Date(pay.processedDate);
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      return payDate.getMonth() === currentMonth && payDate.getFullYear() === currentYear;
+    })
+    .reduce((total, pay) => total + pay.totalAmount, 0);
+
+  const metrics = [
+    {
+      title: "Total Companies",
+      value: companies.length.toString(),
+      change: `${companies.length} registered`,
+      icon: Building2,
+      trend: "neutral",
+      color: "text-primary"
+    },
+    {
+      title: "Total Employees",
+      value: employees.length.toString(),
+      change: `${activeEmployees} active`,
+      icon: Users,
+      trend: employees.length > 0 ? "up" : "neutral",
+      color: "text-success"
+    },
+    {
+      title: "Monthly Payroll",
+      value: `₦${(currentMonthPayroll / 1000000).toFixed(1)}M`,
+      change: `${payroll.length} entries processed`,
+      icon: DollarSign,
+      trend: currentMonthPayroll > 0 ? "up" : "neutral",
+      color: "text-warning"
+    },
+    {
+      title: "Pending Applicants",
+      value: pendingApplicants.toString(),
+      change: `${applicants.length} total applicants`,
+      icon: UserCheck,
+      trend: "neutral",
+      color: "text-blue-600"
+    }
+  ];
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground mt-2">
-          Welcome back! Here's what's happening with your HR operations.
+          Welcome back, {user?.firstName}! Here's what's happening with your HR operations.
         </p>
       </div>
 
