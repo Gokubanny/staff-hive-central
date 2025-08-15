@@ -28,7 +28,10 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Payslip from './pages/Payslip';
 import AdminPostJob from "./pages/admin/AdminPostJob";
-import AdminLeaveManagement from "./pages/admin/LeaveManagement"; // Add this import
+import AdminAllJobs from "./pages/admin/AdminAllJob"; // Add this import
+import AdminLeaveManagement from "./pages/admin/LeaveManagement";
+import AdminEditJob from "./pages/admin/AdminEditJob"; // Add this import
+import AdminViewJob from "./pages/admin/AdminViewJob"; // Add this import
 
 // Import all user pages
 import UserLeavePage from "./pages/user/UserLeavePage";
@@ -71,33 +74,33 @@ const App = () => (
                 <Route path="payroll" element={<Payroll />} />
                 <Route path="payslip/:employeeId" element={<Payslip />} />
                 <Route path="generate-payroll" element={<GeneratePayroll />} />
-                <Route path="leave-management" element={<AdminLeaveManagement />} /> {/* Add this line */}
+                <Route path="leave-management" element={<AdminLeaveManagement />} />
                 <Route path="applicants" element={<Applicants />} />
                 <Route path="add-applicant" element={<AddApplicant />} />
-                <Route path="post-job" element={<AdminPostJob />} />
+                
+                {/* Job Posting Routes */}
+                <Route path="jobs" element={<AdminAllJobs />} />
+                <Route path="jobs/post" element={<AdminPostJob />} />
+                <Route path="jobs/edit/:id" element={<AdminEditJob />} />
+                <Route path="jobs/view/:id" element={<AdminViewJob />} />
+                
                 <Route path="knowledge" element={<Knowledge />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
 
-              {/* User routes - FIXED */}
+              {/* User routes */}
               <Route path="/user-dashboard" element={
                 <ProtectedRoute requiredRole="user">
                   <UserLayout />
                 </ProtectedRoute>
               }>
                 <Route index element={<UserDashboard />} />
-                
-                {/* Leave routes - flattened to match sidebar URLs */}
                 <Route path="leave" element={<LeaveRequestPage />} />
                 <Route path="leave/balance" element={<LeaveBalancePage />} />
                 <Route path="leave/history" element={<LeaveHistoryPage />} />
-                
-                {/* Training routes */}
                 <Route path="training" element={<UserTrainingPage />} />
                 <Route path="training/courses" element={<div>Available Courses Page</div>} />
-                
-                {/* Other user routes */}
                 <Route path="benefits" element={<UserBenefitsPage />} />
                 <Route path="jobs" element={<UserJobsPage />} />
                 <Route path="profile" element={<UserProfilePage />} />

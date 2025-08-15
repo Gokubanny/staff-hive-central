@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, CheckCircle, XCircle, User, FileText, Filter, Search, Bell } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 
 const AdminLeaveManagement = () => {
+  const [leaveRequests, setLeaveRequests] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [leaveRequests, setLeaveRequests] = useState([]);
   const [showNotification, setShowNotification] = useState(false);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [currentRequestId, setCurrentRequestId] = useState(null);
-  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     const storedRequests = JSON.parse(localStorage.getItem('leaveRequests') || '[]');
@@ -33,44 +28,87 @@ const AdminLeaveManagement = () => {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('leaveRequestSubmitted', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('leaveRequestSubmitted', handleStorageChange);
+    };
   }, [leaveRequests]);
 
-  const handleStatusChange = (id, newStatus, reason = '') => {
-    const updatedRequests = leaveRequests.map(request =>
-      request.id === id
-        ? {
-            ...request,
-            status: newStatus,
-            [`${newStatus}By`]: 'Admin',
-            [`${newStatus}Date`]: new Date().toISOString().split('T')[0],
-            [`${newStatus}At`]: new Date().toISOString(),
-            ...(newStatus === 'rejected' && reason && { rejectionReason: reason })
-          }
-        : request
+  const handleApprove = (id) => {
+    const updatedRequests = leaveRequests.map(req =>
+      req.id === id 
+        ? { 
+            ...req, 
+            status: 'approved',
+            approvedBy: 'Admin',
+            approvedDate: new Date().toISOString().split('T')[0],
+            lastUpdated: new Date().toISOString()
+          } 
+        : req
     );
-
-    localStorage.setItem('leaveRequests', JSON.stringify(updatedRequests));
+    
     setLeaveRequests(updatedRequests);
+    localStorage.setItem('leaveRequests', JSON.stringify(updatedRequests));
+    
+    // Dispatch event for real-time updates
+    window.dispatchEvent(new CustomEvent('leaveRequestUpdated', {
+      detail: { 
+        requestId: id, 
+        status: 'approved',
+        approvedBy: 'Admin',
+        approvedDate: new Date().toISOString().split('T')[0]
+      }
+    }));
 
-    if (newStatus === 'rejected') {
-      setRejectDialogOpen(false);
-      setRejectionReason('');
-    }
+    alert('Leave request approved successfully!');
   };
 
-  const handleRejectWithReason = () => {
-    if (currentRequestId && rejectionReason.trim()) {
-      handleStatusChange(currentRequestId, 'rejected', rejectionReason.trim());
+  const handleReject = (id) => {
+    // Show prompt for rejection reason
+    const reason = prompt('Please enter the reason for rejection:');
+    
+    if (reason !== null && reason.trim() !== '') {
+      const updatedRequests = leaveRequests.map(req =>
+        req.id === id 
+          ? { 
+              ...req, 
+              status: 'rejected',
+              rejectedBy: 'Admin',
+              rejectedDate: new Date().toISOString().split('T')[0],
+              rejectionReason: reason.trim(),
+              lastUpdated: new Date().toISOString()
+            } 
+          : req
+      );
+      
+      setLeaveRequests(updatedRequests);
+      localStorage.setItem('leaveRequests', JSON.stringify(updatedRequests));
+      
+      // Dispatch event for real-time updates
+      window.dispatchEvent(new CustomEvent('leaveRequestUpdated', {
+        detail: { 
+          requestId: id, 
+          status: 'rejected',
+          rejectedBy: 'Admin',
+          rejectedDate: new Date().toISOString().split('T')[0],
+          rejectionReason: reason.trim()
+        }
+      }));
+      
+      alert('Leave request rejected successfully!');
+    } else if (reason !== null) {
+      alert('Please provide a reason for rejection.');
     }
   };
 
   const filteredRequests = leaveRequests.filter(request => {
     const matchesTab = activeTab === 'all' || request.status === activeTab;
-    const matchesSearch =
-      request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.department.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      (request.employeeName || request.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (request.employeeId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (request.department || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || request.leaveType === filterType;
 
     return matchesTab && matchesSearch && matchesType;
@@ -82,7 +120,7 @@ const AdminLeaveManagement = () => {
       approved: 'bg-green-100 text-green-800 border-green-200',
       rejected: 'bg-red-100 text-red-800 border-red-200'
     };
-    return `px-3 py-1 rounded-full text-sm border ${colors[status]}`;
+    return `px-3 py-1 rounded-full text-sm border ${colors[status] || colors.pending}`;
   };
 
   const getStatusIcon = (status) => {
@@ -113,11 +151,9 @@ const AdminLeaveManagement = () => {
         )}
 
         {/* Header */}
-        <div className="mb-6 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Leave Management</h1>
-            <p className="text-gray-600">Manage employee leave requests and approvals</p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Leave Management</h1>
+          <p className="text-gray-600">Manage employee leave requests and approvals</p>
         </div>
 
         {/* Stats Cards */}
@@ -179,6 +215,8 @@ const AdminLeaveManagement = () => {
               <div className="relative">
                 <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
+                  id="search-employees"
+                  name="searchEmployees"
                   type="text"
                   placeholder="Search by employee name, ID, or department..."
                   value={searchTerm}
@@ -191,6 +229,8 @@ const AdminLeaveManagement = () => {
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-gray-400" />
               <select
+                id="filter-leave-type"
+                name="filterLeaveType"
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -259,8 +299,13 @@ const AdminLeaveManagement = () => {
                           <User className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">{request.employeeName}</h3>
-                          <p className="text-sm text-gray-500">{request.employeeId} • {request.department}</p>
+                          <h3 className="font-semibold text-gray-900">
+                            {request.employeeName || request.name}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {request.employeeId && `${request.employeeId} • `}
+                            {request.department}
+                          </p>
                           {request.email && (
                             <p className="text-sm text-gray-400">{request.email}</p>
                           )}
@@ -269,7 +314,7 @@ const AdminLeaveManagement = () => {
                       <div className="flex items-center space-x-2">
                         {getStatusIcon(request.status)}
                         <span className={getStatusBadge(request.status)}>
-                          {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          {(request.status || 'pending').charAt(0).toUpperCase() + (request.status || 'pending').slice(1)}
                         </span>
                       </div>
                     </div>
@@ -281,22 +326,26 @@ const AdminLeaveManagement = () => {
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Duration</p>
-                        <p className="font-medium">{request.startDate} to {request.endDate}</p>
+                        <p className="font-medium">
+                          {request.startDate || request.from} to {request.endDate || request.to}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Days</p>
-                        <p className="font-medium">{request.days} days</p>
+                        <p className="font-medium">{request.days || 'N/A'} days</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Applied Date</p>
-                        <p className="font-medium">{request.appliedDate}</p>
+                        <p className="font-medium">{request.appliedDate || new Date().toLocaleDateString()}</p>
                       </div>
                     </div>
 
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-500 mb-1">Reason</p>
-                      <p className="text-gray-900">{request.reason}</p>
-                    </div>
+                    {request.reason && (
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-500 mb-1">Reason</p>
+                        <p className="text-gray-900">{request.reason}</p>
+                      </div>
+                    )}
 
                     {request.emergencyContact && (
                       <div className="mb-4">
@@ -313,21 +362,17 @@ const AdminLeaveManagement = () => {
                       </div>
                     )}
 
-                    {request.status === 'pending' && (
+                    {(request.status === 'pending' || !request.status) && (
                       <div className="flex flex-wrap gap-3">
                         <button
-                          onClick={() => handleStatusChange(request.id, 'approved')}
+                          onClick={() => handleApprove(request.id)}
                           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
                         >
                           <CheckCircle className="w-4 h-4" />
                           <span>Approve</span>
                         </button>
                         <button
-                          onClick={() => {
-                            setCurrentRequestId(request.id);
-                            setRejectionReason(""); // Reset input
-                            setRejectDialogOpen(true);
-                          }}
+                          onClick={() => handleReject(request.id)}
                           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
                         >
                           <XCircle className="w-4 h-4" />
@@ -338,7 +383,7 @@ const AdminLeaveManagement = () => {
 
                     {(request.status === 'approved' || request.status === 'rejected') && (
                       <div className="text-sm text-gray-500">
-                        {request.status.charAt(0).toUpperCase() + request.status.slice(1)} by {request[`${request.status}By`]} on {request[`${request.status}Date`]}
+                        {(request.status || '').charAt(0).toUpperCase() + (request.status || '').slice(1)} by {request[`${request.status}By`] || 'Admin'} on {request[`${request.status}Date`] || new Date().toLocaleDateString()}
                       </div>
                     )}
                   </div>
@@ -348,39 +393,6 @@ const AdminLeaveManagement = () => {
           </div>
         </div>
       </div>
-
-      {/* Reject Reason Dialog */}
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reject Leave Request</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejecting this leave request. The employee will see this feedback.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <textarea
-              rows={4}
-              placeholder="Enter rejection reason..."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleRejectWithReason}
-              disabled={!rejectionReason.trim()}
-            >
-              Confirm Rejection
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
