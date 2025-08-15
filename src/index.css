@@ -111,6 +111,12 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
 /* 
 @layer base {
   * {

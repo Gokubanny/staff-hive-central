@@ -9,7 +9,8 @@ import {
   BarChart3,
   Settings,
   Briefcase,
-  FileText
+  FileText,
+  Calendar
 } from "lucide-react"
 import { ChevronDown } from 'lucide-react';
 import { NavLink, useLocation } from "react-router-dom"
@@ -32,6 +33,7 @@ const mainItems = [
   { title: "Companies", url: "/dashboard/companies", icon: Building2 },
   { title: "Employees", url: "/dashboard/employees", icon: Users },
   { title: "Payroll", url: "/dashboard/payroll", icon: CreditCard },
+  { title: "Leave Management", url: "/dashboard/leave-management", icon: Calendar },
   { title: "Applicants", url: "/dashboard/applicants", icon: UserPlus },
   { 
     title: "Job Postings", 

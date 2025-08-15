@@ -14,9 +14,10 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Only adding sidebar state
   const navigate = useNavigate();
 
-  // Initialize auth state (no auto-redirect)
+  // Initialize auth state
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -25,7 +26,6 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(false);
   }, []);
 
-  // Handle login (with optional post-login redirect)
   const login = async (email, password, role = 'user', redirectPath = null) => {
     if (email && password) {
       const userData = {
@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
       
-      // Redirect after login if specified
       if (redirectPath) {
         navigate(redirectPath, { replace: true });
       }
@@ -46,18 +45,27 @@ export const AuthProvider = ({ children }) => {
     return false;
   };
 
-  // Handle logout
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    navigate('/signin', { replace: true }); // Redirect to sign-in after logout
+    navigate('/signin', { replace: true });
+  };
+
+  // Simple sidebar toggle function
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => !prev);
   };
 
   const value = {
+    // Auth values
     user,
     login,
     logout,
-    isLoading
+    isLoading,
+    
+    // UI values
+    sidebarOpen,
+    toggleSidebar
   };
 
   return (

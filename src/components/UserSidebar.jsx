@@ -15,41 +15,33 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
 const mainItems = [
-  { 
-    title: "Dashboard", 
-    url: "/user-dashboard", 
-    icon: Home 
-  },
+  { title: "Dashboard", url: "/user-dashboard", icon: Home },
   { 
     title: "Leave", 
     url: "/user-dashboard/leave", 
     icon: Calendar,
     subItems: [
-      { title: "Request Leave", url: "/user-dashboard/leave/request" },
+      { title: "Request Leave", url: "/user-dashboard/leave" },
       { title: "Leave Balance", url: "/user-dashboard/leave/balance" },
-      { title: "Leave History", url: "/user-dashboard/leave/history" } // Corrected URL
+      { title: "Leave History", url: "/user-dashboard/leave/history" }
     ]
   },
   { 
     title: "Training", 
     url: "/user-dashboard/training", 
-    icon: BookOpen 
+    icon: BookOpen,
+    subItems: [
+      { title: "My Training", url: "/user-dashboard/training" },
+      { title: "Available Courses", url: "/user-dashboard/training/courses" }
+    ]
   },
-  { 
-    title: "Benefits", 
-    url: "/user-dashboard/benefits", 
-    icon: Gift 
-  },
-  { 
-    title: "Job Applications", 
-    url: "/user-dashboard/jobs", 
-    icon: Briefcase 
-  },
-  { 
-    title: "Profile", 
-    url: "/user-dashboard/profile", 
-    icon: User 
-  }
+  { title: "Benefits", url: "/user-dashboard/benefits", icon: Gift },
+  { title: "Job Applications", url: "/user-dashboard/jobs", icon: Briefcase },
+  { title: "Profile", url: "/user-dashboard/profile", icon: User }
+];
+
+const secondaryItems = [
+  { title: "Company Info", url: "/user-dashboard/company", icon: Building2 },
 ];
 
 export const UserSidebar = () => {
@@ -59,6 +51,15 @@ export const UserSidebar = () => {
 
   const toggleGroup = (title) => {
     setExpandedGroup(expandedGroup === title ? null : title);
+  };
+
+  const handleItemClick = (e, item, hasSubItems) => {
+    if (hasSubItems) {
+      // Prevent navigation for items with sub-items, just toggle
+      e.preventDefault();
+      toggleGroup(item.title);
+    }
+    // For items without sub-items, let the NavLink handle navigation normally
   };
 
   return (
@@ -90,27 +91,40 @@ export const UserSidebar = () => {
               
               return (
                 <div key={item.title} className="group">
-                  <NavLink 
-                    to={hasSubItems ? '#' : item.url}
-                    onClick={() => hasSubItems && toggleGroup(item.title)}
-                    className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      isActive 
-                        ? 'bg-blue-50 text-blue-600 font-medium' 
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="w-4 h-4" />
-                      <span>{item.title}</span>
-                    </div>
-                    {hasSubItems && (
+                  {hasSubItems ? (
+                    // For items with sub-items, use a button instead of NavLink
+                    <button
+                      onClick={() => toggleGroup(item.title)}
+                      className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive 
+                          ? 'bg-blue-50 text-blue-600 font-medium' 
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-4 h-4" />
+                        <span>{item.title}</span>
+                      </div>
                       <ChevronDown
                         className={`w-4 h-4 transition-transform ${
                           expandedGroup === item.title ? 'rotate-180' : ''
                         }`}
                       />
-                    )}
-                  </NavLink>
+                    </button>
+                  ) : (
+                    // For items without sub-items, use NavLink normally
+                    <NavLink 
+                      to={item.url}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive 
+                          ? 'bg-blue-50 text-blue-600 font-medium' 
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  )}
 
                   {hasSubItems && expandedGroup === item.title && (
                     <div className="ml-8 mt-1 space-y-1">
@@ -118,8 +132,8 @@ export const UserSidebar = () => {
                         <NavLink
                           key={subItem.title}
                           to={subItem.url}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                            location.pathname === subItem.url
+                          className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            isActive
                               ? 'bg-blue-50 text-blue-600 font-medium'
                               : 'text-gray-700 hover:bg-gray-50'
                           }`}
@@ -138,17 +152,44 @@ export const UserSidebar = () => {
           </div>
         </div>
 
-        {/* Sign Out Button */}
-        <div className="p-4 border-t border-gray-100 sticky bottom-0 bg-white">
-          <Button 
-            variant="outline" 
-            className="w-full gap-2"
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
+        {/* Resources Section */}
+        <div className="mb-6">
+          <div className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">
+            Resources
+          </div>
+          <div className="space-y-1">
+            {secondaryItems.map((item) => {
+              const Icon = item.icon;
+              
+              return (
+                <NavLink 
+                  key={item.title}
+                  to={item.url} 
+                  className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    isActive 
+                      ? 'bg-blue-50 text-blue-600 font-medium' 
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.title}</span>
+                </NavLink>
+              );
+            })}
+          </div>
         </div>
+      </div>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-gray-100 sticky bottom-0 bg-white">
+        <Button 
+          variant="outline" 
+          className="w-full gap-2"
+          onClick={logout}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </Button>
       </div>
     </div>
   );

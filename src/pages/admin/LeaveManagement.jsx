@@ -155,7 +155,7 @@ const AdminLeaveManagement = ({
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 min-h-screen ml-64">
       <div className="max-w-7xl mx-auto">
         {/* Notification Banner */}
         {showNotification && (

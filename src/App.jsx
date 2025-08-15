@@ -28,6 +28,7 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Payslip from './pages/Payslip';
 import AdminPostJob from "./pages/admin/AdminPostJob";
+import AdminLeaveManagement from "./pages/admin/LeaveManagement"; // Add this import
 
 // Import all user pages
 import UserLeavePage from "./pages/user/UserLeavePage";
@@ -70,6 +71,7 @@ const App = () => (
                 <Route path="payroll" element={<Payroll />} />
                 <Route path="payslip/:employeeId" element={<Payslip />} />
                 <Route path="generate-payroll" element={<GeneratePayroll />} />
+                <Route path="leave-management" element={<AdminLeaveManagement />} /> {/* Add this line */}
                 <Route path="applicants" element={<Applicants />} />
                 <Route path="add-applicant" element={<AddApplicant />} />
                 <Route path="post-job" element={<AdminPostJob />} />
@@ -78,22 +80,28 @@ const App = () => (
                 <Route path="settings" element={<Settings />} />
               </Route>
 
-              {/* User routes */}
+              {/* User routes - FIXED */}
               <Route path="/user-dashboard" element={
                 <ProtectedRoute requiredRole="user">
                   <UserLayout />
                 </ProtectedRoute>
               }>
                 <Route index element={<UserDashboard />} />
-                <Route path="leave" element={<UserLeavePage />}>
-                  <Route path="request" element={<LeaveRequestPage />} />
-                  <Route path="balance" element={<LeaveBalancePage />} />
-                  <Route path="history" element={<LeaveHistoryPage />} />
-                </Route>
+                
+                {/* Leave routes - flattened to match sidebar URLs */}
+                <Route path="leave" element={<LeaveRequestPage />} />
+                <Route path="leave/balance" element={<LeaveBalancePage />} />
+                <Route path="leave/history" element={<LeaveHistoryPage />} />
+                
+                {/* Training routes */}
                 <Route path="training" element={<UserTrainingPage />} />
+                <Route path="training/courses" element={<div>Available Courses Page</div>} />
+                
+                {/* Other user routes */}
                 <Route path="benefits" element={<UserBenefitsPage />} />
                 <Route path="jobs" element={<UserJobsPage />} />
                 <Route path="profile" element={<UserProfilePage />} />
+                <Route path="company" element={<div>Company Info Page</div>} />
               </Route>
 
               {/* Admin-only standalone routes */}
