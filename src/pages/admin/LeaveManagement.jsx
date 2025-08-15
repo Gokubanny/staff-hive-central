@@ -1,109 +1,78 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, CheckCircle, XCircle, User, FileText, Filter, Search, Bell } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
-const AdminLeaveManagement = ({ 
-  initialRequests = [], 
-  onRequestUpdate = null,
-  newRequestNotification = null 
-}) => {
+const AdminLeaveManagement = () => {
   const [activeTab, setActiveTab] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [leaveRequests, setLeaveRequests] = useState(initialRequests);
+  const [leaveRequests, setLeaveRequests] = useState([]);
   const [showNotification, setShowNotification] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [currentRequestId, setCurrentRequestId] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
-  // Function to add new leave request (exposed for external use)
-  const addLeaveRequest = (newRequest) => {
-    const request = {
-      ...newRequest,
-      id: Date.now() + Math.random(), // More unique ID generation
-      status: 'pending',
-      appliedDate: new Date().toISOString().split('T')[0],
-      submittedAt: new Date().toISOString()
-    };
-    
-    setLeaveRequests(prev => {
-      const updated = [request, ...prev];
-      // Notify parent component if callback provided
-      if (onRequestUpdate) {
-        onRequestUpdate(updated);
-      }
-      return updated;
-    });
-
-    // Show notification for new request
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 5000);
-    
-    return request.id;
-  };
-
-  // Expose addLeaveRequest function globally for other components to use
   useEffect(() => {
-    window.addLeaveRequest = addLeaveRequest;
-    
-    // Cleanup on unmount
-    return () => {
-      delete window.addLeaveRequest;
-    };
+    const storedRequests = JSON.parse(localStorage.getItem('leaveRequests') || '[]');
+    setLeaveRequests(storedRequests);
   }, []);
 
-  // Listen for new request notifications
   useEffect(() => {
-    if (newRequestNotification) {
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 5000);
-    }
-  }, [newRequestNotification]);
+    const handleStorageChange = () => {
+      const storedRequests = JSON.parse(localStorage.getItem('leaveRequests') || '[]');
+      setLeaveRequests(storedRequests);
+
+      const newPendingCount = storedRequests.filter(r => r.status === 'pending').length;
+      const oldPendingCount = leaveRequests.filter(r => r.status === 'pending').length;
+
+      if (newPendingCount > oldPendingCount) {
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 5000);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [leaveRequests]);
 
   const handleStatusChange = (id, newStatus, reason = '') => {
-    setLeaveRequests(prev => {
-      const updated = prev.map(request => 
-        request.id === id 
-          ? { 
-              ...request, 
-              status: newStatus,
-              [`${newStatus}By`]: 'Admin',
-              [`${newStatus}Date`]: new Date().toISOString().split('T')[0],
-              [`${newStatus}At`]: new Date().toISOString(),
-              ...(newStatus === 'rejected' && reason && { rejectionReason: reason })
-            }
-          : request
-      );
-      
-      // Notify parent component if callback provided
-      if (onRequestUpdate) {
-        onRequestUpdate(updated);
-      }
-      
-      return updated;
-    });
+    const updatedRequests = leaveRequests.map(request =>
+      request.id === id
+        ? {
+            ...request,
+            status: newStatus,
+            [`${newStatus}By`]: 'Admin',
+            [`${newStatus}Date`]: new Date().toISOString().split('T')[0],
+            [`${newStatus}At`]: new Date().toISOString(),
+            ...(newStatus === 'rejected' && reason && { rejectionReason: reason })
+          }
+        : request
+    );
+
+    localStorage.setItem('leaveRequests', JSON.stringify(updatedRequests));
+    setLeaveRequests(updatedRequests);
+
+    if (newStatus === 'rejected') {
+      setRejectDialogOpen(false);
+      setRejectionReason('');
+    }
   };
 
-  // Bulk operations
-  const handleBulkApprove = (requests) => {
-    requests.forEach(request => {
-      if (request.status === 'pending') {
-        handleStatusChange(request.id, 'approved');
-      }
-    });
-  };
-
-  const handleBulkReject = (requests, reason) => {
-    requests.forEach(request => {
-      if (request.status === 'pending') {
-        handleStatusChange(request.id, 'rejected', reason);
-      }
-    });
+  const handleRejectWithReason = () => {
+    if (currentRequestId && rejectionReason.trim()) {
+      handleStatusChange(currentRequestId, 'rejected', rejectionReason.trim());
+    }
   };
 
   const filteredRequests = leaveRequests.filter(request => {
     const matchesTab = activeTab === 'all' || request.status === activeTab;
-    const matchesSearch = request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.department.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.department.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || request.leaveType === filterType;
-    
+
     return matchesTab && matchesSearch && matchesType;
   });
 
@@ -113,51 +82,24 @@ const AdminLeaveManagement = ({
       approved: 'bg-green-100 text-green-800 border-green-200',
       rejected: 'bg-red-100 text-red-800 border-red-200'
     };
-    
     return `px-3 py-1 rounded-full text-sm border ${colors[status]}`;
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
+    switch (status) {
       case 'approved': return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'rejected': return <XCircle className="w-4 h-4 text-red-600" />;
       default: return <Clock className="w-4 h-4 text-yellow-600" />;
     }
   };
 
-  const calculateDays = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const timeDiff = end.getTime() - start.getTime();
-    return Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-  };
-
   const pendingRequests = leaveRequests.filter(r => r.status === 'pending');
   const approvedRequests = leaveRequests.filter(r => r.status === 'approved');
   const rejectedRequests = leaveRequests.filter(r => r.status === 'rejected');
 
-  // Sample function to simulate employee request (for testing)
-  const simulateEmployeeRequest = () => {
-    const sampleRequest = {
-      employeeName: 'John Doe',
-      employeeId: 'EMP' + Math.floor(Math.random() * 1000),
-      department: 'Engineering',
-      leaveType: 'Annual Leave',
-      startDate: '2024-08-20',
-      endDate: '2024-08-25',
-      days: 6,
-      reason: 'Family vacation',
-      emergencyContact: '+1234567890',
-      email: 'john.doe@company.com'
-    };
-    
-    addLeaveRequest(sampleRequest);
-  };
-
   return (
     <div className="p-6 bg-gray-50 min-h-screen ml-64">
       <div className="max-w-7xl mx-auto">
-        {/* Notification Banner */}
         {showNotification && (
           <div className="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
             <div className="flex items-center">
@@ -176,14 +118,6 @@ const AdminLeaveManagement = ({
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Leave Management</h1>
             <p className="text-gray-600">Manage employee leave requests and approvals</p>
           </div>
-          
-          {/* Test Button - Remove in production */}
-          <button
-            onClick={simulateEmployeeRequest}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-          >
-            + Simulate Employee Request
-          </button>
         </div>
 
         {/* Stats Cards */}
@@ -204,7 +138,7 @@ const AdminLeaveManagement = ({
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center justify-between">
               <div>
@@ -214,7 +148,7 @@ const AdminLeaveManagement = ({
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center justify-between">
               <div>
@@ -224,7 +158,7 @@ const AdminLeaveManagement = ({
               <XCircle className="w-8 h-8 text-red-600" />
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center justify-between">
               <div>
@@ -238,10 +172,9 @@ const AdminLeaveManagement = ({
           </div>
         </div>
 
-        {/* Filters and Search */}
+        {/* Filters */}
         <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
           <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
             <div className="flex-1">
               <div className="relative">
                 <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -254,8 +187,7 @@ const AdminLeaveManagement = ({
                 />
               </div>
             </div>
-            
-            {/* Leave Type Filter */}
+
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-gray-400" />
               <select
@@ -270,7 +202,6 @@ const AdminLeaveManagement = ({
                 <option value="Maternity Leave">Maternity Leave</option>
                 <option value="Paternity Leave">Paternity Leave</option>
                 <option value="Emergency Leave">Emergency Leave</option>
-                <option value="Study Leave">Study Leave</option>
               </select>
             </div>
           </div>
@@ -304,7 +235,7 @@ const AdminLeaveManagement = ({
             </nav>
           </div>
 
-          {/* Leave Requests List */}
+          {/* Leave Requests */}
           <div className="p-6">
             {filteredRequests.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
@@ -314,15 +245,8 @@ const AdminLeaveManagement = ({
                 </h3>
                 <p className="text-gray-500 mb-4">
                   {leaveRequests.length === 0 
-                    ? 'Employees haven\'t submitted any leave requests yet' 
-                    : 'No requests match your current filters'
-                  }
-                </p>
-                <p className="text-sm text-gray-400">
-                  {leaveRequests.length === 0 
-                    ? 'Leave requests from employees will appear here for your review and approval.'
-                    : 'Try adjusting your search or filter criteria'
-                  }
+                    ? "Employees haven't submitted any leave requests yet" 
+                    : 'No requests match your current filters'}
                 </p>
               </div>
             ) : (
@@ -361,7 +285,7 @@ const AdminLeaveManagement = ({
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Days</p>
-                        <p className="font-medium">{request.days || calculateDays(request.startDate, request.endDate)} days</p>
+                        <p className="font-medium">{request.days} days</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Applied Date</p>
@@ -400,10 +324,9 @@ const AdminLeaveManagement = ({
                         </button>
                         <button
                           onClick={() => {
-                            const reason = prompt('Please enter rejection reason:');
-                            if (reason && reason.trim()) {
-                              handleStatusChange(request.id, 'rejected', reason.trim());
-                            }
+                            setCurrentRequestId(request.id);
+                            setRejectionReason(""); // Reset input
+                            setRejectDialogOpen(true);
                           }}
                           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
                         >
@@ -425,19 +348,41 @@ const AdminLeaveManagement = ({
           </div>
         </div>
       </div>
+
+      {/* Reject Reason Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Leave Request</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this leave request. The employee will see this feedback.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <textarea
+              rows={4}
+              placeholder="Enter rejection reason..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleRejectWithReason}
+              disabled={!rejectionReason.trim()}
+            >
+              Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-// Export the component and helper functions
 export default AdminLeaveManagement;
-
-// Helper function for external components to submit leave requests
-export const submitLeaveRequest = (requestData) => {
-  if (window.addLeaveRequest) {
-    return window.addLeaveRequest(requestData);
-  } else {
-    console.warn('AdminLeaveManagement component not mounted or addLeaveRequest not available');
-    return null;
-  }
-};
