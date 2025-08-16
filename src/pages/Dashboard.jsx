@@ -1,621 +1,414 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { useData } from "@/contexts/DataContext"
-import { useAuth } from "@/contexts/AuthContext"
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
-  Users, 
-  Building2, 
-  DollarSign, 
-  UserCheck, 
-  TrendingUp,
-  AlertCircle,
-  Calendar,
-  Clock,
-  ArrowUp,
-  ArrowDown,
-  RefreshCw,
-  Search,
-  Plus,
-  Loader2
-} from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+  Users, Briefcase, Calendar, TrendingUp, TrendingDown, Plus, Eye, 
+  Clock, CheckCircle, XCircle, AlertTriangle, BarChart3, PieChart,
+  Activity, Target, Award, MessageSquare, Bell, Filter, Download,
+  UserCheck, Building, MapPin, DollarSign, Star
+} from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Empty State Component
-const EmptyState = ({ message, action }) => (
-  <div className="flex flex-col items-center justify-center p-8 text-center">
-    <p className="text-muted-foreground mb-4">{message}</p>
-    {action && <Button variant="outline">{action}</Button>}
-  </div>
-);
-
-// Loading Spinner
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center h-64">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  </div>
-);
-
-// Calculate growth percentage between current and previous period
-const calculateGrowth = (current, previous) => {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return ((current - previous) / previous) * 100;
-};
-
-export default function Dashboard() {
-  const { employees, companies, applicants, payroll, isLoading, refreshData } = useData();
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [timeRange, setTimeRange] = useState('month');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredActivities, setFilteredActivities] = useState([]);
-  const [filteredAlerts, setFilteredAlerts] = useState([]);
-
-  // Sample data - replace with your actual data
-  const recentActivities = [
-    {
-      type: "payroll",
-      title: "Payroll processed for TechCorp Ltd",
-      description: "142 employees • ₦12.4M total",
-      time: "2 hours ago",
-      status: "completed"
-    },
-    // ... other activities
-  ];
-
-  const alerts = [
-    {
-      title: "Payroll Due Tomorrow",
-      description: "3 companies have payroll due for processing",
-      priority: "high",
-      action: "Review Payroll"
-    },
-    // ... other alerts
-  ];
-
-  // Verify admin role
-  useEffect(() => {
-    if (user?.role !== 'admin') {
-      navigate('/unauthorized');
-    }
-  }, [user, navigate]);
-
-  // Filter activities and alerts based on search
-  useEffect(() => {
-    setFilteredActivities(
-      recentActivities.filter(activity => 
-        activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-    setFilteredAlerts(
-      alerts.filter(alert => 
-        alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        alert.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-  }, [searchQuery]);
-
-  // Calculate dynamic metrics with growth
-  const activeEmployees = employees.filter(emp => emp.status === 'active').length;
-  const pendingApplicants = applicants.filter(app => ['applied', 'screening', 'interview'].includes(app.stage)).length;
+const AdminDashboard = () => {
+  const [timeRange, setTimeRange] = useState('30d');
   
-  const currentMonthPayroll = payroll
-    .filter(pay => {
-      const payDate = new Date(pay.processedDate);
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
-      return payDate.getMonth() === currentMonth && payDate.getFullYear() === currentYear;
-    })
-    .reduce((total, pay) => total + pay.totalAmount, 0);
+  // Mock data - in real app, this would come from your API/context
+  const dashboardData = {
+    totalJobs: 15,
+    activeJobs: 8,
+    totalApplications: 156,
+    newApplications: 12,
+    interviewsScheduled: 8,
+    hiredThisMonth: 4,
+    rejectedApplications: 23,
+    averageTimeToHire: 18, // days
+    topPerformingJobs: [
+      { title: 'Senior Frontend Developer', applications: 45, company: 'TechCorp' },
+      { title: 'UX Designer', applications: 32, company: 'DesignStudio' },
+      { title: 'Backend Developer', applications: 28, company: 'CloudTech' }
+    ],
+    recentApplications: [
+      {
+        id: 1,
+        applicantName: 'Alex Johnson',
+        position: 'Senior Frontend Developer',
+        appliedDate: '2024-05-20',
+        status: 'interview',
+        rating: 4.5
+      },
+      {
+        id: 2,
+        applicantName: 'Sarah Chen',
+        position: 'UX Designer',
+        appliedDate: '2024-05-19',
+        status: 'review',
+        rating: 4.8
+      },
+      {
+        id: 3,
+        applicantName: 'Michael Rodriguez',
+        position: 'Backend Developer',
+        appliedDate: '2024-05-18',
+        status: 'hired',
+        rating: 5.0
+      }
+    ],
+    upcomingInterviews: [
+      {
+        id: 1,
+        applicantName: 'Alex Johnson',
+        position: 'Senior Frontend Developer',
+        date: '2024-05-21',
+        time: '2:00 PM',
+        type: 'Technical'
+      },
+      {
+        id: 2,
+        applicantName: 'Emma Wilson',
+        position: 'Product Manager',
+        date: '2024-05-21',
+        time: '4:00 PM',
+        type: 'Cultural Fit'
+      }
+    ],
+    departmentStats: [
+      { name: 'Engineering', openPositions: 5, applications: 89, hires: 2 },
+      { name: 'Design', openPositions: 2, applications: 34, hires: 1 },
+      { name: 'Product', openPositions: 1, applications: 23, hires: 1 }
+    ]
+  };
 
-  const previousMonthPayroll = payroll
-    .filter(pay => {
-      const payDate = new Date(pay.processedDate);
-      const date = new Date();
-      date.setMonth(date.getMonth() - 1);
-      return payDate.getMonth() === date.getMonth() && payDate.getFullYear() === date.getFullYear();
-    })
-    .reduce((total, pay) => total + pay.totalAmount, 0);
-
-  const payrollGrowth = calculateGrowth(currentMonthPayroll, previousMonthPayroll);
-  const employeeGrowth = calculateGrowth(employees.length, employees.length - 10); // Sample previous value
-
-  const metrics = [
-    {
-      title: "Total Companies",
-      value: companies.length.toString(),
-      change: `${companies.length} registered`,
-      icon: Building2,
-      trend: "neutral",
-      color: "text-primary",
-      growth: 0
-    },
-    {
-      title: "Total Employees",
-      value: employees.length.toString(),
-      change: `${activeEmployees} active`,
-      icon: Users,
-      trend: employeeGrowth > 0 ? "up" : employeeGrowth < 0 ? "down" : "neutral",
-      color: "text-success",
-      growth: employeeGrowth
-    },
-    {
-      title: "Monthly Payroll",
-      value: `₦${(currentMonthPayroll / 1000000).toFixed(1)}M`,
-      change: `${payroll.length} entries processed`,
-      icon: DollarSign,
-      trend: payrollGrowth > 0 ? "up" : payrollGrowth < 0 ? "down" : "neutral",
-      color: "text-warning",
-      growth: payrollGrowth
-    },
-    {
-      title: "Pending Applicants",
-      value: pendingApplicants.toString(),
-      change: `${applicants.length} total applicants`,
-      icon: UserCheck,
-      trend: "neutral",
-      color: "text-blue-600",
-      growth: 0
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'hired':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'interview':
+        return 'bg-blue-100 text-blue-800';
+      case 'review':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
-  ];
+  };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'hired':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4" />;
+      case 'interview':
+        return <Calendar className="h-4 w-4" />;
+      case 'review':
+        return <Clock className="h-4 w-4" />;
+      default:
+        return <AlertTriangle className="h-4 w-4" />;
+    }
+  };
+
+  const StatusBadge = ({ status }) => (
+    <Badge className={`${getStatusColor(status)} flex items-center gap-1`}>
+      {getStatusIcon(status)}
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </Badge>
+  );
+
+  const RatingStars = ({ rating }) => {
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`h-3 w-3 ${
+              star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+            }`}
+          />
+        ))}
+        <span className="text-xs text-gray-600 ml-1">({rating})</span>
+      </div>
+    );
+  };
 
   return (
-    <div className="space-y-8 ml-64">
-      {/* Header with controls */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 overflow-auto">
+    <div className="p-6 ml-64 space-y-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Welcome back, {user?.firstName}! Here's what's happening with your HR operations.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">HR Dashboard</h1>
+          <p className="text-gray-600 mt-1">Overview of your recruitment and HR activities</p>
         </div>
-        
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Time Range" />
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="day">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="quarter">This Quarter</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="1y">Last year</SelectItem>
             </SelectContent>
           </Select>
-          
-          <Button onClick={refreshData} variant="outline" size="icon">
-            <RefreshCw className="h-4 w-4" />
+          <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Post New Job
           </Button>
         </div>
       </div>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric, index) => (
-          <Card 
-            key={index} 
-            className="bg-gradient-card shadow-card border-0 hover:shadow-elevated transition-all duration-300 cursor-pointer"
-            onClick={() => navigate(`/${metric.title.toLowerCase().replace(' ', '-')}`)}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {metric.title}
-              </CardTitle>
-              <metric.icon className={`h-4 w-4 ${metric.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{metric.value}</div>
-              <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
-                {metric.trend === "up" ? (
-                  <ArrowUp className="h-3 w-3 text-success" />
-                ) : metric.trend === "down" ? (
-                  <ArrowDown className="h-3 w-3 text-destructive" />
-                ) : null}
-                <span>
-                  {metric.growth !== 0 && `${Math.abs(metric.growth).toFixed(1)}% ${metric.trend === "up" ? 'increase' : 'decrease'}`}
-                  {metric.growth === 0 && metric.change}
-                </span>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600">Active Jobs</p>
+                <p className="text-3xl font-bold text-blue-800">{dashboardData.activeJobs}</p>
+                <p className="text-xs text-blue-600 mt-1">of {dashboardData.totalJobs} total</p>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              <div className="h-12 w-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                <Briefcase className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-600">Total Applications</p>
+                <p className="text-3xl font-bold text-green-800">{dashboardData.totalApplications}</p>
+                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  +{dashboardData.newApplications} new
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-green-500 rounded-lg flex items-center justify-center">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-600">Interviews</p>
+                <p className="text-3xl font-bold text-purple-800">{dashboardData.interviewsScheduled}</p>
+                <p className="text-xs text-purple-600 mt-1">scheduled this week</p>
+              </div>
+              <div className="h-12 w-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-600">Hired This Month</p>
+                <p className="text-3xl font-bold text-orange-800">{dashboardData.hiredThisMonth}</p>
+                <p className="text-xs text-orange-600 mt-1">Avg. {dashboardData.averageTimeToHire} days</p>
+              </div>
+              <div className="h-12 w-12 bg-orange-500 rounded-lg flex items-center justify-center">
+                <UserCheck className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2 shadow-card border-0">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <CardTitle>Recent Activity</CardTitle>
-              </div>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search activities..."
-                  className="pl-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-            <CardDescription>
-              Latest updates from your HR operations
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {filteredActivities.length > 0 ? (
-              filteredActivities.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 rounded-lg bg-gradient-accent">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    activity.status === 'completed' ? 'bg-success' : 'bg-warning'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{activity.title}</p>
-                    <p className="text-xs text-muted-foreground">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-                  </div>
-                  <Badge variant={activity.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
-                    {activity.status}
-                  </Badge>
+        {/* Recent Applications */}
+        <div className="lg:col-span-2">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Recent Applications
+                  </CardTitle>
+                  <CardDescription>Latest job applications received</CardDescription>
                 </div>
-              ))
-            ) : (
-              <EmptyState 
-                message="No activities found" 
-                action={searchQuery ? "Clear search" : "Refresh data"}
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Alerts & Actions */}
-        <Card className="shadow-card border-0">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-warning" />
-              Alerts & Actions
-            </CardTitle>
-            <CardDescription>
-              Items requiring your attention
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {filteredAlerts.length > 0 ? (
-              filteredAlerts.map((alert, index) => (
-                <div key={index} className="space-y-3 p-3 rounded-lg border border-border">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-foreground">{alert.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{alert.description}</p>
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View All
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {dashboardData.recentApplications.map((application) => (
+                <div key={application.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-full text-white font-bold text-sm">
+                      {application.applicantName.split(' ').map(n => n[0]).join('')}
                     </div>
-                    <Badge 
-                      variant={alert.priority === 'high' ? 'destructive' : alert.priority === 'medium' ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {alert.priority}
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900">{application.applicantName}</h4>
+                      <p className="text-sm text-gray-600">{application.position}</p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <RatingStars rating={application.rating} />
+                        <span className="text-xs text-gray-500">
+                          Applied {new Date(application.appliedDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <StatusBadge status={application.status} />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Side Panel */}
+        <div className="space-y-6">
+          {/* Upcoming Interviews */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Upcoming Interviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {dashboardData.upcomingInterviews.map((interview) => (
+                <div key={interview.id} className="p-3 border rounded-lg bg-blue-50 border-blue-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-sm">{interview.applicantName}</h4>
+                    <Badge variant="outline" className="text-xs bg-white">
+                      {interview.type}
                     </Badge>
                   </div>
-                  <Button size="sm" variant="outline" className="w-full text-xs">
-                    {alert.action}
-                  </Button>
+                  <p className="text-xs text-gray-600 mb-2">{interview.position}</p>
+                  <div className="flex items-center gap-2 text-xs text-blue-600">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(interview.date).toLocaleDateString()} at {interview.time}
+                  </div>
                 </div>
-              ))
-            ) : (
-              <EmptyState message="No alerts found" />
-            )}
-          </CardContent>
-        </Card>
+              ))}
+              <Button variant="outline" size="sm" className="w-full">
+                <Calendar className="h-4 w-4 mr-2" />
+                View Schedule
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Top Performing Jobs */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Top Performing Jobs
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {dashboardData.topPerformingJobs.map((job, index) => (
+                <div key={index} className="p-3 border rounded-lg">
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="font-medium text-sm truncate">{job.title}</h4>
+                    <Badge variant="secondary" className="text-xs">
+                      {job.applications}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-600">{job.company}</p>
+                  <div className="mt-2">
+                    <Progress value={(job.applications / 50) * 100} className="h-2" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Quick Actions */}
-      <Card className="shadow-card border-0">
+      {/* Department Statistics */}
+      <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Quick Actions
-          </CardTitle>
-          <CardDescription>
-            Common tasks to get you started
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                Department Overview
+              </CardTitle>
+              <CardDescription>Hiring statistics by department</CardDescription>
+            </div>
+            <Button variant="outline" size="sm">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              View Report
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button 
-              className="h-16 flex flex-col gap-2" 
-              variant="outline"
-              onClick={() => navigate('./employees')}
-            >
-              <Users className="h-5 w-5" />
-              <span className="text-sm">Add Employee</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {dashboardData.departmentStats.map((dept, index) => (
+              <div key={index} className="p-4 border rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
+                <h3 className="font-semibold text-lg mb-3">{dept.name}</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Open Positions</span>
+                    <span className="font-medium">{dept.openPositions}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Applications</span>
+                    <span className="font-medium">{dept.applications}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Hires</span>
+                    <span className="font-medium text-green-600">{dept.hires}</span>
+                  </div>
+                  <div className="mt-3">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>Success Rate</span>
+                      <span>{Math.round((dept.hires / dept.applications) * 100)}%</span>
+                    </div>
+                    <Progress value={(dept.hires / dept.applications) * 100} className="h-2" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Common HR tasks and shortcuts</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button className="h-20 flex-col gap-2 bg-blue-600 hover:bg-blue-700" variant="default">
+              <Plus className="h-6 w-6" />
+              Post Job
             </Button>
-            <Button 
-              className="h-16 flex flex-col gap-2" 
-              variant="outline"
-              onClick={() => navigate('./companies')}
-            >
-              <Building2 className="h-5 w-5" />
-              <span className="text-sm">Register Company</span>
+            <Button className="h-20 flex-col gap-2" variant="outline">
+              <Users className="h-6 w-6" />
+              Review Applications
             </Button>
-            <Button 
-              className="h-16 flex flex-col gap-2" 
-              variant="outline"
-              onClick={() => navigate('./generate-payroll')}
-            >
-              <DollarSign className="h-5 w-5" />
-              <span className="text-sm">Process Payroll</span>
+            <Button className="h-20 flex-col gap-2" variant="outline">
+              <Calendar className="h-6 w-6" />
+              Schedule Interview
+            </Button>
+            <Button className="h-20 flex-col gap-2" variant="outline">
+              <BarChart3 className="h-6 w-6" />
+              Generate Report
             </Button>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-}
+};
 
-
-
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-// import { Badge } from "@/components/ui/badge"
-// import { Button } from "@/components/ui/button"
-// import { useData } from "@/contexts/DataContext"
-// import { useAuth } from "@/contexts/AuthContext"
-// import heroImage from "@/assets/hr-hero.jpg"
-// import { 
-//   Users, 
-//   Building2, 
-//   DollarSign, 
-//   UserCheck, 
-//   TrendingUp,
-//   AlertCircle,
-//   Calendar,
-//   Clock
-// } from "lucide-react"
-
-
-// const recentActivities = [
-//   {
-//     type: "payroll",
-//     title: "Payroll processed for TechCorp Ltd",
-//     description: "142 employees • ₦12.4M total",
-//     time: "2 hours ago",
-//     status: "completed"
-//   },
-//   {
-//     type: "employee",
-//     title: "New employee onboarded",
-//     description: "Sarah Johnson joined as HR Manager",
-//     time: "4 hours ago",
-//     status: "completed"
-//   },
-//   {
-//     type: "applicant",
-//     title: "Interview scheduled",
-//     description: "John Doe - Software Engineer position",
-//     time: "6 hours ago",
-//     status: "pending"
-//   },
-//   {
-//     type: "company",
-//     title: "New company registered",
-//     description: "Green Energy Solutions Ltd",
-//     time: "1 day ago",
-//     status: "completed"
-//   }
-// ]
-
-// const alerts = [
-//   {
-//     title: "Payroll Due Tomorrow",
-//     description: "3 companies have payroll due for processing",
-//     priority: "high",
-//     action: "Review Payroll"
-//   },
-//   {
-//     title: "Contract Renewals",
-//     description: "8 employee contracts expire this month",
-//     priority: "medium",
-//     action: "View Contracts"
-//   },
-//   {
-//     title: "System Backup",
-//     description: "Weekly backup completed successfully",
-//     priority: "low",
-//     action: "View Report"
-//   }
-// ]
-
-// export default function Dashboard() {
-//   const { employees, companies, applicants, payroll } = useData();
-//   const { user } = useAuth();
-
-//   // Calculate dynamic metrics
-//   const activeEmployees = employees.filter(emp => emp.status === 'active').length;
-//   const pendingApplicants = applicants.filter(app => ['applied', 'screening', 'interview'].includes(app.stage)).length;
-//   const currentMonthPayroll = payroll
-//     .filter(pay => {
-//       const payDate = new Date(pay.processedDate);
-//       const currentMonth = new Date().getMonth();
-//       const currentYear = new Date().getFullYear();
-//       return payDate.getMonth() === currentMonth && payDate.getFullYear() === currentYear;
-//     })
-//     .reduce((total, pay) => total + pay.totalAmount, 0);
-
-//   const metrics = [
-//     {
-//       title: "Total Companies",
-//       value: companies.length.toString(),
-//       change: `${companies.length} registered`,
-//       icon: Building2,
-//       trend: "neutral",
-//       color: "text-primary"
-//     },
-//     {
-//       title: "Total Employees",
-//       value: employees.length.toString(),
-//       change: `${activeEmployees} active`,
-//       icon: Users,
-//       trend: employees.length > 0 ? "up" : "neutral",
-//       color: "text-success"
-//     },
-//     {
-//       title: "Monthly Payroll",
-//       value: `₦${(currentMonthPayroll / 1000000).toFixed(1)}M`,
-//       change: `${payroll.length} entries processed`,
-//       icon: DollarSign,
-//       trend: currentMonthPayroll > 0 ? "up" : "neutral",
-//       color: "text-warning"
-//     },
-//     {
-//       title: "Pending Applicants",
-//       value: pendingApplicants.toString(),
-//       change: `${applicants.length} total applicants`,
-//       icon: UserCheck,
-//       trend: "neutral",
-//       color: "text-blue-600"
-//     }
-//   ];
-
-//   return (
-//     <div className="space-y-8">
-//       {/* Header */}
-//       <div>
-//         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-//         <p className="text-muted-foreground mt-2">
-//           Welcome back, {user?.firstName}! Here's what's happening with your HR operations.
-//         </p>
-//       </div>
-
-//       {/* Metrics Cards */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-//         {metrics.map((metric, index) => (
-//           <Card key={index} className="bg-gradient-card shadow-card border-0 hover:shadow-elevated transition-all duration-300">
-//             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//               <CardTitle className="text-sm font-medium text-muted-foreground">
-//                 {metric.title}
-//               </CardTitle>
-//               <metric.icon className={`h-4 w-4 ${metric.color}`} />
-//             </CardHeader>
-//             <CardContent>
-//               <div className="text-2xl font-bold text-foreground">{metric.value}</div>
-//               <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
-//                 {metric.trend === "up" && <TrendingUp className="h-3 w-3 text-success" />}
-//                 <span>{metric.change}</span>
-//               </div>
-//             </CardContent>
-//           </Card>
-//         ))}
-//       </div>
-
-//       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-//         {/* Recent Activity */}
-//         <Card className="lg:col-span-2 shadow-card border-0">
-//           <CardHeader>
-//             <CardTitle className="flex items-center gap-2">
-//               <Clock className="h-5 w-5 text-primary" />
-//               Recent Activity
-//             </CardTitle>
-//             <CardDescription>
-//               Latest updates from your HR operations
-//             </CardDescription>
-//           </CardHeader>
-//           <CardContent className="space-y-4">
-//             {recentActivities.map((activity, index) => (
-//               <div key={index} className="flex items-start space-x-3 p-3 rounded-lg bg-gradient-accent">
-//                 <div className={`w-2 h-2 rounded-full mt-2 ${
-//                   activity.status === 'completed' ? 'bg-success' : 'bg-warning'
-//                 }`} />
-//                 <div className="flex-1 min-w-0">
-//                   <p className="text-sm font-medium text-foreground">{activity.title}</p>
-//                   <p className="text-xs text-muted-foreground">{activity.description}</p>
-//                   <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-//                 </div>
-//                 <Badge variant={activity.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
-//                   {activity.status}
-//                 </Badge>
-//               </div>
-//             ))}
-//           </CardContent>
-//         </Card>
-
-//         {/* Alerts & Actions */}
-//         <Card className="shadow-card border-0">
-//           <CardHeader>
-//             <CardTitle className="flex items-center gap-2">
-//               <AlertCircle className="h-5 w-5 text-warning" />
-//               Alerts & Actions
-//             </CardTitle>
-//             <CardDescription>
-//               Items requiring your attention
-//             </CardDescription>
-//           </CardHeader>
-//           <CardContent className="space-y-4">
-//             {alerts.map((alert, index) => (
-//               <div key={index} className="space-y-3 p-3 rounded-lg border border-border">
-//                 <div className="flex items-start justify-between">
-//                   <div className="flex-1">
-//                     <h4 className="text-sm font-medium text-foreground">{alert.title}</h4>
-//                     <p className="text-xs text-muted-foreground mt-1">{alert.description}</p>
-//                   </div>
-//                   <Badge 
-//                     variant={alert.priority === 'high' ? 'destructive' : alert.priority === 'medium' ? 'default' : 'secondary'}
-//                     className="text-xs"
-//                   >
-//                     {alert.priority}
-//                   </Badge>
-//                 </div>
-//                 <Button size="sm" variant="outline" className="w-full text-xs">
-//                   {alert.action}
-//                 </Button>
-//               </div>
-//             ))}
-//           </CardContent>
-//         </Card>
-//       </div>
-
-//       {/* Quick Actions */}
-//       <Card className="shadow-card border-0">
-//         <CardHeader>
-//           <CardTitle className="flex items-center gap-2">
-//             <Calendar className="h-5 w-5 text-primary" />
-//             Quick Actions
-//           </CardTitle>
-//           <CardDescription>
-//             Common tasks to get you started
-//           </CardDescription>
-//         </CardHeader>
-//         <CardContent>
-//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-//             <Button className="h-16 flex flex-col gap-2" variant="outline">
-//               <Users className="h-5 w-5" />
-//               <span className="text-sm">Add Employee</span>
-//             </Button>
-//             <Button className="h-16 flex flex-col gap-2" variant="outline">
-//               <Building2 className="h-5 w-5" />
-//               <span className="text-sm">Register Company</span>
-//             </Button>
-//             <Button className="h-16 flex flex-col gap-2" variant="outline">
-//               <DollarSign className="h-5 w-5" />
-//               <span className="text-sm">Process Payroll</span>
-//             </Button>
-//           </div>
-//         </CardContent>
-//       </Card>
-//     </div>
-//   )
-// }
+export default AdminDashboard;
