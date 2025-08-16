@@ -32,7 +32,10 @@ import AdminPostJob from "./pages/admin/AdminPostJob";
 import AdminAllJob from "./pages/admin/AdminAllJob";
 import AdminViewJob from "./pages/admin/AdminViewJob";
 import AdminEditJob from "./pages/admin/AdminEditJob";
-import AdminLeaveManagement from "./pages/admin/LeaveManagement"; // Add this import
+import AdminLeaveManagement from "./pages/admin/LeaveManagement";
+
+// Import Job Application Component
+import JobApplicationForm from "./pages/JobApplicationForm";
 
 // Import all user pages
 import UserLeavePage from "./pages/user/UserLeavePage";
@@ -76,19 +79,25 @@ const App = () => (
                 <Route path="payroll" element={<Payroll />} />
                 <Route path="payslip/:employeeId" element={<Payslip />} />
                 <Route path="generate-payroll" element={<GeneratePayroll />} />
-                <Route path="leave-management" element={<AdminLeaveManagement />} /> {/* Add this line */}
+                <Route path="leave-management" element={<AdminLeaveManagement />} />
+                
+                {/* Enhanced Applicant Management */}
                 <Route path="applicants" element={<Applicants />} />
                 <Route path="add-applicant" element={<AddApplicant />} />
+                
+                {/* Job Management Routes */}
                 <Route path="post-job" element={<AdminPostJob />} />
                 <Route path="job-postings" element={<AdminAllJob />} />
+                <Route path="jobs" element={<AdminAllJob />} /> {/* Alternative route */}
                 <Route path="jobs/view/:id" element={<AdminViewJob />} />
-<Route path="jobs/edit/:id" element={<AdminEditJob />} />
+                <Route path="jobs/edit/:id" element={<AdminEditJob />} />
+                
                 <Route path="knowledge" element={<Knowledge />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
 
-              {/* User routes - FIXED */}
+              {/* User routes */}
               <Route path="/user-dashboard" element={
                 <ProtectedRoute requiredRole="user">
                   <UserLayout />
@@ -105,12 +114,22 @@ const App = () => (
                 <Route path="training" element={<UserTrainingPage />} />
                 <Route path="training/courses" element={<div>Available Courses Page</div>} />
                 
+                {/* Enhanced Job Routes for Users */}
+                <Route path="jobs" element={<UserJobsPage />} />
+                <Route path="apply-job/:jobId" element={<JobApplicationForm />} />
+                
                 {/* Other user routes */}
                 <Route path="benefits" element={<UserBenefitsPage />} />
-                <Route path="jobs" element={<UserJobsPage />} />
                 <Route path="profile" element={<UserProfilePage />} />
                 <Route path="company" element={<div>Company Info Page</div>} />
               </Route>
+
+              {/* Shared Job Application Route (accessible from both layouts) */}
+              <Route path="/apply-job/:jobId" element={
+                <ProtectedRoute requiredRole="user">
+                  <JobApplicationForm />
+                </ProtectedRoute>
+              } />
 
               {/* Admin-only standalone routes */}
               <Route path="/add-companies" element={

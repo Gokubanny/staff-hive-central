@@ -1,81 +1,136 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useJobs } from '@/contexts/JobContext';
-import { useForm, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Save, X } from 'lucide-react';
+import { useJobs } from '@/contexts/JobContext';
+import { useToast } from '@/hooks/use-toast';
 
-export default function AdminEditJob() {
+const AdminEditJob = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { jobs, updateJobs } = useJobs();
+  const { jobs, updateJob } = useJobs();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const job = jobs.find(j => j.id === id || j._id === id);
-
-  const { 
-    register, 
-    handleSubmit, 
-    reset, 
-    control,
-    formState: { errors } 
-  } = useForm({
-    defaultValues: job || {
-      title: '',
-      type: '',
-      location: '',
-      salary: '',
-      salaryCurrency: 'NGN',
-      description: '',
-      requirements: '',
-      benefits: '',
-      deadline: ''
-    }
+  
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    location: '',
+    type: '',
+    salary: '',
+    salaryCurrency: 'USD',
+    status: 'open',
+    requirements: [],
+    benefits: [],
+    company: ''
   });
 
+  const [requirementInput, setRequirementInput] = useState('');
+  const [benefitInput, setBenefitInput] = useState('');
+
   useEffect(() => {
-    if (job) {
-      reset(job);
+    const currentJob = jobs.find(j => (j._id || j.id) === id);
+    if (currentJob) {
+      setFormData({
+        title: currentJob.title || '',
+        description: currentJob.description || '',
+        location: currentJob.location || '',
+        type: currentJob.type || '',
+        salary: currentJob.salary || '',
+        salaryCurrency: currentJob.salaryCurrency || 'USD',
+        status: currentJob.status || 'open',
+        requirements: currentJob.requirements || [],
+        benefits: currentJob.benefits || [],
+        company: currentJob.company || ''
+      });
     }
-  }, [job, reset]);
+  }, [id, jobs]);
 
-  const onSubmit = async (data) => {
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const addRequirement = () => {
+    if (requirementInput.trim() && !formData.requirements.includes(requirementInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        requirements: [...prev.requirements, requirementInput.trim()]
+      }));
+      setRequirementInput('');
+    }
+  };
+
+  const removeRequirement = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      requirements: prev.requirements.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addBenefit = () => {
+    if (benefitInput.trim() && !formData.benefits.includes(benefitInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        benefits: [...prev.benefits, benefitInput.trim()]
+      }));
+      setBenefitInput('');
+    }
+  };
+
+  const removeBenefit = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      benefits: prev.benefits.filter((_, i) => i !== index)
+    }));
+  };
+
+  const validateForm = () => {
+    const required = ['title', 'description', 'location', 'type', 'salary'];
+    const missing = required.filter(field => !formData[field].trim());
+    
+    if (missing.length > 0) {
+      toast({
+        title: "Missing Information",
+        description: `Please fill in: ${missing.join(', ')}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
+
     try {
-      const updatedJob = {
-        ...data,
-        id: job.id || job._id,
-        status: job.status,
-        postedDate: job.postedDate,
-        applications: job.applications || []
-      };
-
-      const updatedJobs = jobs.map(j => 
-        (j.id === id || j._id === id) ? updatedJob : j
-      );
-      updateJobs(updatedJobs);
-
+      await updateJob(id, {
+        ...formData,
+        updatedAt: new Date().toISOString()
+      });
+      
       toast({
         title: "Success",
-        description: "Job updated successfully!",
-        variant: "default",
+        description: "Job updated successfully",
       });
-      navigate('/dashboard/job-postings');
+
+      navigate(`/dashboard/jobs/view/${id}`);
     } catch (error) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update job",
+        title: "Update Failed",
+        description: "There was an error updating the job. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -83,15 +138,14 @@ export default function AdminEditJob() {
     }
   };
 
-  if (!job) {
+  const currentJob = jobs.find(j => (j._id || j.id) === id);
+
+  if (!currentJob) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="p-6 ml-64 flex justify-center items-center h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Job not found</h1>
-          <Button 
-            className="mt-4"
-            onClick={() => navigate('/dashboard/job-postings')}
-          >
+          <h2 className="text-xl font-semibold mb-2">Job not found</h2>
+          <Button onClick={() => navigate('/dashboard/job-postings')}>
             Back to Jobs
           </Button>
         </div>
@@ -100,47 +154,85 @@ export default function AdminEditJob() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Edit Job: {job.title}</h1>
-        <Button
-          variant="outline"
-          onClick={() => navigate('/dashboard/job-postings')}
-        >
-          Back to Jobs
-        </Button>
+    <div className="p-6 ml-64 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(`/dashboard/jobs/view/${id}`)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Job Details
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Edit Job</h1>
+            <p className="text-gray-600">Update job posting details</p>
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Job Title */}
-        <div className="space-y-2">
-          <Label htmlFor="title">Job Title*</Label>
-          <Input
-            id="title"
-            {...register("title", {
-              required: "Job title is required",
-              minLength: {
-                value: 5,
-                message: "Title should be at least 5 characters"
-              }
-            })}
-            placeholder="Senior DevOps Engineer"
-          />
-          {errors.title && (
-            <p className="text-sm text-red-500">{errors.title.message}</p>
-          )}
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Job Title *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  placeholder="e.g. Senior Frontend Developer"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company">Company Name</Label>
+                <Input
+                  id="company"
+                  value={formData.company}
+                  onChange={(e) => handleInputChange('company', e.target.value)}
+                  placeholder="e.g. Tech Corp Inc."
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Job Description *</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Provide a detailed description of the role, responsibilities, and what you're looking for..."
+                rows={6}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Job Type and Location */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="type">Job Type*</Label>
-            <Controller
-              name="type"
-              control={control}
-              rules={{ required: "Job type is required" }}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
+        {/* Job Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Job Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="location">Location *</Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  placeholder="e.g. San Francisco, CA"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="type">Job Type *</Label>
+                <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
@@ -153,165 +245,140 @@ export default function AdminEditJob() {
                     <SelectItem value="hybrid">Hybrid</SelectItem>
                   </SelectContent>
                 </Select>
-              )}
-            />
-            {errors.type && (
-              <p className="text-sm text-red-500">{errors.type.message}</p>
-            )}
-          </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="location">Location*</Label>
-            <Input
-              id="location"
-              {...register("location", {
-                required: "Location is required",
-                minLength: {
-                  value: 3,
-                  message: "Location should be at least 3 characters"
-                }
-              })}
-              placeholder="e.g. Lagos, Nigeria or Remote"
-            />
-            {errors.location && (
-              <p className="text-sm text-red-500">{errors.location.message}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Salary Information */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="salaryCurrency">Currency*</Label>
-            <Controller
-              name="salaryCurrency"
-              control={control}
-              rules={{ required: "Currency is required" }}
-              defaultValue="NGN"
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="salary">Salary *</Label>
+                <Input
+                  id="salary"
+                  type="number"
+                  value={formData.salary}
+                  onChange={(e) => handleInputChange('salary', e.target.value)}
+                  placeholder="e.g. 80000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="salaryCurrency">Currency</Label>
+                <Select value={formData.salaryCurrency} onValueChange={(value) => handleInputChange('salaryCurrency', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NGN">₦ (NGN)</SelectItem>
-                    <SelectItem value="USD">$ (USD)</SelectItem>
-                    <SelectItem value="EUR">€ (EUR)</SelectItem>
-                    <SelectItem value="GBP">£ (GBP)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="NGN">NGN (₦)</SelectItem>
                   </SelectContent>
                 </Select>
-              )}
-            />
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="salary">Salary Range*</Label>
-            <Input
-              id="salary"
-              {...register("salary", {
-                required: "Salary is required",
-                pattern: {
-                  value: /^[\d, -]+$/,
-                  message: "Please enter a valid salary range (e.g., 50,000 - 80,000)"
-                }
-              })}
-              placeholder="e.g. 50,000 - 80,000 or Negotiable"
-            />
-            {errors.salary && (
-              <p className="text-sm text-red-500">{errors.salary.message}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Job Description */}
-        <div className="space-y-2">
-          <Label htmlFor="description">Job Description*</Label>
-          <Textarea
-            id="description"
-            {...register("description", {
-              required: "Job description is required",
-              minLength: {
-                value: 50,
-                message: "Description should be at least 50 characters"
-              }
-            })}
-            rows={6}
-            className="min-h-[120px]"
-            placeholder="Describe the job responsibilities, expectations, and day-to-day activities..."
-          />
-          {errors.description && (
-            <p className="text-sm text-red-500">{errors.description.message}</p>
-          )}
-        </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Requirements */}
-        <div className="space-y-2">
-          <Label htmlFor="requirements">Requirements*</Label>
-          <Textarea
-            id="requirements"
-            {...register("requirements", {
-              required: "Requirements are required",
-              minLength: {
-                value: 30,
-                message: "Requirements should be at least 30 characters"
-              }
-            })}
-            rows={4}
-            placeholder="List key requirements (one per line or as bullet points)"
-            className="min-h-[80px]"
-          />
-          {errors.requirements && (
-            <p className="text-sm text-red-500">{errors.requirements.message}</p>
-          )}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Requirements</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                value={requirementInput}
+                onChange={(e) => setRequirementInput(e.target.value)}
+                placeholder="Add a requirement..."
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addRequirement())}
+              />
+              <Button type="button" onClick={addRequirement}>Add</Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.requirements.map((req, index) => (
+                <div key={index} className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                  {req}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 h-4 w-4 p-0 hover:bg-blue-200"
+                    onClick={() => removeRequirement(index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Benefits (Optional) */}
-        <div className="space-y-2">
-          <Label htmlFor="benefits">Benefits (Optional)</Label>
-          <Textarea
-            id="benefits"
-            {...register("benefits")}
-            rows={3}
-            placeholder="List any benefits or perks (health insurance, bonuses, etc.)"
-            className="min-h-[60px]"
-          />
-        </div>
+        {/* Benefits */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Benefits</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                value={benefitInput}
+                onChange={(e) => setBenefitInput(e.target.value)}
+                placeholder="Add a benefit..."
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addBenefit())}
+              />
+              <Button type="button" onClick={addBenefit}>Add</Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.benefits.map((benefit, index) => (
+                <div key={index} className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                  {benefit}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 h-4 w-4 p-0 hover:bg-green-200"
+                    onClick={() => removeBenefit(index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Application Deadline */}
-        <div className="space-y-2">
-          <Label htmlFor="deadline">Application Deadline (Optional)</Label>
-          <Input
-            id="deadline"
-            type="date"
-            {...register("deadline")}
-            min={new Date().toISOString().split('T')[0]}
-          />
-        </div>
-
-        {/* Form Actions */}
-        <div className="flex justify-end gap-4 pt-6">
+        {/* Submit Button */}
+        <div className="flex justify-end space-x-4">
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/dashboard/job-postings')}
+            onClick={() => navigate(`/dashboard/jobs/view/${id}`)}
             disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className='bg-primary hover:bg-blue-900'
+            className="bg-blue-600 hover:bg-blue-700"
             disabled={isSubmitting}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : 'Update Job'}
+            <Save className="h-4 w-4 mr-2" />
+            {isSubmitting ? 'Updating...' : 'Update Job'}
           </Button>
         </div>
       </form>
     </div>
   );
-}
+};
+
+export default AdminEditJob;

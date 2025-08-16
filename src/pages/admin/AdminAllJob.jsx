@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2, Eye, Trash2 } from 'lucide-react';
+import { Search, Loader2, Eye, Trash2, Edit } from 'lucide-react';
 import { useJobs } from '@/contexts/JobContext';
 import {
   AlertDialog,
@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminAllJob = () => {
   const { jobs, isLoading, removeJob } = useJobs();
@@ -26,6 +26,7 @@ const AdminAllJob = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,17 +41,38 @@ const AdminAllJob = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (jobToDelete) {
-      removeJob(jobToDelete.id || jobToDelete._id);
-      toast({
-        title: "Success",
-        description: "Job deleted successfully",
-        variant: "default",
-      });
+      try {
+        console.log('Deleting job:', jobToDelete); // Debug log
+        const jobId = jobToDelete.id || jobToDelete._id;
+        await removeJob(jobId);
+        toast({
+          title: "Success",
+          description: "Job deleted successfully",
+        });
+        console.log('Job deleted successfully'); // Debug log
+      } catch (error) {
+        console.error('Error deleting job:', error); // Debug log
+        toast({
+          title: "Error",
+          description: "Failed to delete job",
+          variant: "destructive",
+        });
+      }
     }
     setDeleteDialogOpen(false);
     setJobToDelete(null);
+  };
+
+  const handleViewJob = (jobId) => {
+    console.log('Viewing job:', jobId); // Debug log
+    navigate(`/dashboard/jobs/view/${jobId}`);
+  };
+
+  const handleEditJob = (jobId) => {
+    console.log('Editing job:', jobId); // Debug log
+    navigate(`/dashboard/jobs/edit/${jobId}`);
   };
 
   if (isLoading) {
@@ -69,7 +91,8 @@ const AdminAllJob = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the job posting and remove the data from our servers.
+              This action cannot be undone. This will permanently delete the job posting 
+              "{jobToDelete?.title}" and remove all associated applications from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -78,7 +101,7 @@ const AdminAllJob = () => {
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              Delete Job
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -191,30 +214,46 @@ const AdminAllJob = () => {
                   <TableCell>
                     {new Date(job.postedDate || job.createdAt).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/dashboard/jobs/view/${job.id || job._id}`)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/dashboard/jobs/edit/${job.id || job._id}`)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-600 hover:text-red-800"
-                      onClick={() => handleDeleteClick(job)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const jobId = job.id || job._id;
+                          console.log('View button clicked for job:', jobId);
+                          handleViewJob(jobId);
+                        }}
+                        className="hover:bg-blue-50 text-blue-600"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const jobId = job.id || job._id;
+                          console.log('Edit button clicked for job:', jobId);
+                          handleEditJob(jobId);
+                        }}
+                        className="hover:bg-gray-50"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                        onClick={() => {
+                          console.log('Delete button clicked for job:', job);
+                          handleDeleteClick(job);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

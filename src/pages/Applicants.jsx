@@ -17,7 +17,12 @@ import {
   ChevronUp,
   Search,
   Filter,
-  Download
+  Download,
+  MapPin,
+  DollarSign,
+  Clock,
+  ExternalLink,
+  FileText
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -29,40 +34,80 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { useJobs } from '@/contexts/JobContext';
 
 const ApplicantManagement = () => {
   const [applicants, setApplicants] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [jobFilter, setJobFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const { toast } = useToast();
+  const { jobs, applications } = useJobs(); // Get applications from context
 
   // Fetch applicants data
   useEffect(() => {
-    // Replace with actual API call
-    const mockApplicants = [
-      {
-        id: 1,
-        name: "Alex Johnson",
-        email: "alex.j@example.com",
-        phone: "+1 (555) 123-4567",
-        position: "Frontend Developer",
-        appliedDate: "2024-05-15",
-        status: "review",
-        resumeUrl: "#",
-        coverLetter: "I'm excited to apply for the Frontend Developer position...",
-        experience: "3 years React experience"
-      },
-      // More applicants...
-    ];
-    setApplicants(mockApplicants);
-  }, []);
+    if (applications && applications.length > 0) {
+      setApplicants(applications);
+    } else {
+      // Mock data for development/testing
+      const mockApplicants = [
+        {
+          id: 1,
+          fullName: "Alex Johnson",
+          email: "alex.j@example.com",
+          phone: "+1 (555) 123-4567",
+          jobTitle: "Frontend Developer",
+          jobId: "job1",
+          appliedDate: "2024-05-15",
+          status: "review",
+          currentPosition: "Junior Developer at TechCorp",
+          experience: "2-3",
+          expectedSalary: "$70,000 - $85,000",
+          noticePeriod: "2-weeks",
+          coverLetter: "I'm excited to apply for the Frontend Developer position. With my 3 years of React experience and passion for creating user-friendly interfaces, I believe I would be a valuable addition to your team. I have worked on several projects involving modern JavaScript frameworks and have a strong understanding of responsive design principles.",
+          linkedinProfile: "https://linkedin.com/in/alexjohnson",
+          portfolioWebsite: "https://alexjohnson.dev",
+          availability: "2024-06-01",
+          relocate: "yes",
+          additionalInfo: "I am particularly interested in working with React and TypeScript.",
+          resumeUrl: "#",
+          portfolioUrl: "#"
+        },
+        {
+          id: 2,
+          fullName: "Sarah Chen",
+          email: "sarah.chen@example.com",
+          phone: "+1 (555) 987-6543",
+          jobTitle: "UX Designer",
+          jobId: "job2",
+          appliedDate: "2024-05-18",
+          status: "interview",
+          currentPosition: "UI/UX Designer at DesignStudio",
+          experience: "4-5",
+          expectedSalary: "$80,000 - $95,000",
+          noticePeriod: "1-month",
+          coverLetter: "As a seasoned UX Designer with over 4 years of experience, I am thrilled to apply for the UX Designer position. I have led design projects for mobile and web applications, conducted user research, and collaborated closely with development teams to deliver exceptional user experiences.",
+          linkedinProfile: "https://linkedin.com/in/sarahchen",
+          portfolioWebsite: "https://sarahchen.design",
+          availability: "2024-07-01",
+          relocate: "no",
+          additionalInfo: "I specialize in user research and prototyping with Figma.",
+          resumeUrl: "#",
+          portfolioUrl: "#"
+        }
+      ];
+      setApplicants(mockApplicants);
+    }
+  }, [applications]);
 
   const filteredApplicants = applicants.filter(applicant => {
-    const matchesSearch = applicant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         applicant.position.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = applicant.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         applicant.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         applicant.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || applicant.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesJob = jobFilter === 'all' || applicant.jobId === jobFilter;
+    return matchesSearch && matchesStatus && matchesJob;
   });
 
   const handleStatusChange = async (applicantId, newStatus) => {
@@ -85,19 +130,34 @@ const ApplicantManagement = () => {
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'hired':
+        return 'default';
+      case 'rejected':
+        return 'destructive';
+      case 'interview':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  const uniqueJobs = [...new Set(applicants.map(app => app.jobTitle))];
+
   return (
     <div className="space-y-6 ml-64">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Applicant Management</h1>
           <p className="text-muted-foreground">
-            Review and manage job applications
+            Review and manage job applications ({filteredApplicants.length} total)
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
-            Export
+            Export Applications
           </Button>
         </div>
       </div>
@@ -126,6 +186,18 @@ const ApplicantManagement = () => {
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={jobFilter} onValueChange={setJobFilter}>
+          <SelectTrigger className="w-[200px]">
+            <Briefcase className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Filter by job" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Jobs</SelectItem>
+            {uniqueJobs.map(job => (
+              <SelectItem key={job} value={job}>{job}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Applicants List */}
@@ -141,20 +213,20 @@ const ApplicantManagement = () => {
                         <User className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="font-medium">{applicant.name}</p>
+                        <p className="font-medium">{applicant.fullName}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2">
                           <Briefcase className="h-3 w-3" />
-                          {applicant.position}
+                          Applied for {applicant.jobTitle}
+                        </p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(applicant.appliedDate).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <Badge variant={
-                        applicant.status === 'hired' ? 'default' :
-                        applicant.status === 'rejected' ? 'destructive' :
-                        applicant.status === 'interview' ? 'secondary' : 'outline'
-                      }>
-                        {applicant.status}
+                      <Badge variant={getStatusColor(applicant.status)}>
+                        {applicant.status.charAt(0).toUpperCase() + applicant.status.slice(1)}
                       </Badge>
                       <Button 
                         variant="ghost" 
@@ -171,14 +243,15 @@ const ApplicantManagement = () => {
                   </div>
 
                   {expandedId === applicant.id && (
-                    <div className="mt-4 pl-16 space-y-4">
+                    <div className="mt-6 pl-16 space-y-6">
+                      {/* Contact Information */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground flex items-center gap-2">
                             <Mail className="h-4 w-4" />
                             Email
                           </p>
-                          <p>{applicant.email}</p>
+                          <p className="break-all">{applicant.email}</p>
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -192,26 +265,126 @@ const ApplicantManagement = () => {
                             <Calendar className="h-4 w-4" />
                             Applied Date
                           </p>
-                          <p>{applicant.appliedDate}</p>
+                          <p>{new Date(applicant.appliedDate).toLocaleDateString()}</p>
                         </div>
                       </div>
 
+                      {/* Professional Information */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <p className="font-medium flex items-center gap-2">
+                              <Briefcase className="h-4 w-4" />
+                              Current Position
+                            </p>
+                            <p className="text-sm text-muted-foreground">{applicant.currentPosition}</p>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <p className="font-medium flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              Experience
+                            </p>
+                            <p className="text-sm text-muted-foreground">{applicant.experience} years</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <p className="font-medium flex items-center gap-2">
+                              <DollarSign className="h-4 w-4" />
+                              Expected Salary
+                            </p>
+                            <p className="text-sm text-muted-foreground">{applicant.expectedSalary || 'Not specified'}</p>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <p className="font-medium">Notice Period</p>
+                            <p className="text-sm text-muted-foreground">{applicant.noticePeriod || 'Not specified'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cover Letter */}
                       <div className="space-y-2">
                         <p className="font-medium">Cover Letter</p>
-                        <p className="text-sm text-muted-foreground">{applicant.coverLetter}</p>
+                        <div className="bg-muted/50 p-4 rounded-lg">
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{applicant.coverLetter}</p>
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <p className="font-medium">Experience</p>
-                        <p className="text-sm text-muted-foreground">{applicant.experience}</p>
-                      </div>
+                      {/* Additional Information */}
+                      {(applicant.linkedinProfile || applicant.portfolioWebsite || applicant.availability || applicant.relocate) && (
+                        <div className="space-y-4">
+                          <p className="font-medium">Additional Information</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {applicant.linkedinProfile && (
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">LinkedIn Profile</p>
+                                <a 
+                                  href={applicant.linkedinProfile} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                                >
+                                  View Profile <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
+                            )}
+                            {applicant.portfolioWebsite && (
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Portfolio Website</p>
+                                <a 
+                                  href={applicant.portfolioWebsite} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                                >
+                                  View Portfolio <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
+                            )}
+                            {applicant.availability && (
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Availability</p>
+                                <p className="text-sm">{new Date(applicant.availability).toLocaleDateString()}</p>
+                              </div>
+                            )}
+                            {applicant.relocate && (
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Willing to Relocate</p>
+                                <p className="text-sm capitalize">{applicant.relocate}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
-                      <div className="flex gap-2">
+                      {applicant.additionalInfo && (
+                        <div className="space-y-2">
+                          <p className="font-medium">Additional Notes</p>
+                          <p className="text-sm text-muted-foreground">{applicant.additionalInfo}</p>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-2 pt-4 border-t">
                         <Button variant="outline" asChild>
-                          <a href={applicant.resumeUrl} target="_blank" rel="noopener noreferrer">
+                          <a href={applicant.resumeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
                             View Resume
                           </a>
                         </Button>
+                        
+                        {applicant.portfolioUrl && (
+                          <Button variant="outline" asChild>
+                            <a href={applicant.portfolioUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                              <ExternalLink className="h-4 w-4" />
+                              View Portfolio
+                            </a>
+                          </Button>
+                        )}
+                        
                         <Select 
                           value={applicant.status} 
                           onValueChange={(value) => handleStatusChange(applicant.id, value)}
@@ -221,11 +394,16 @@ const ApplicantManagement = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="review">Under Review</SelectItem>
-                            <SelectItem value="interview">Interview</SelectItem>
-                            <SelectItem value="hired">Hire</SelectItem>
-                            <SelectItem value="rejected">Reject</SelectItem>
+                            <SelectItem value="interview">Move to Interview</SelectItem>
+                            <SelectItem value="hired">Hire Candidate</SelectItem>
+                            <SelectItem value="rejected">Reject Application</SelectItem>
                           </SelectContent>
                         </Select>
+                        
+                        <Button variant="outline">
+                          <Mail className="h-4 w-4 mr-2" />
+                          Send Email
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -234,7 +412,9 @@ const ApplicantManagement = () => {
             </div>
           ) : (
             <div className="p-8 text-center text-muted-foreground">
-              No applicants found matching your criteria
+              <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">No applicants found</h3>
+              <p>No applications match your current search and filter criteria.</p>
             </div>
           )}
         </CardContent>
