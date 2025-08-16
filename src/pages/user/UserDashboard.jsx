@@ -143,7 +143,7 @@ export default function UserDashboard() {
             <CardTitle className="text-2xl">18 days</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button variant="link" className="p-0 h-auto" onClick={() => navigate('/leave-request')}>
+            <Button variant="link" className="p-0 h-auto" onClick={() => navigate('./leave')}>
               Request Leave <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </CardContent>
@@ -326,15 +326,15 @@ export default function UserDashboard() {
             <Button 
               variant="outline" 
               className="h-24 flex flex-col gap-2"
-              onClick={() => navigate('/documents')}
+              onClick={() => navigate('./leave')}
             >
               <FileText className="h-6 w-6" />
-              <span>Documents</span>
+              <span>Leave Request</span>
             </Button>
             <Button 
               variant="outline" 
               className="h-24 flex flex-col gap-2"
-              onClick={() => navigate('/benefits')}
+              onClick={() => navigate('./benefits')}
             >
               <Wallet className="h-6 w-6" />
               <span>Benefits</span>
@@ -342,7 +342,7 @@ export default function UserDashboard() {
             <Button 
               variant="outline" 
               className="h-24 flex flex-col gap-2"
-              onClick={() => navigate('/training')}
+              onClick={() => navigate('./training')}
             >
               <FileText className="h-6 w-6" />
               <span>Training</span>
@@ -350,7 +350,7 @@ export default function UserDashboard() {
             <Button 
               variant="outline" 
               className="h-24 flex flex-col gap-2"
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('./profile')}
             >
               <User className="h-6 w-6" />
               <span>My Profile</span>

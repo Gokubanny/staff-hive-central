@@ -31,7 +31,7 @@ const UserJobsPage = () => {
   const uniqueLocations = [...new Set(availableJobs.map(job => job.location))];
 
   const handleApplyClick = (jobId) => {
-    navigate(`/dashboard/apply-job/${jobId}`);
+    navigate(`../apply-job/${jobId}`);
   };
 
   if (isLoading) {

@@ -340,7 +340,7 @@ export default function Dashboard() {
             <Button 
               className="h-16 flex flex-col gap-2" 
               variant="outline"
-              onClick={() => navigate('/employees/new')}
+              onClick={() => navigate('./employees')}
             >
               <Users className="h-5 w-5" />
               <span className="text-sm">Add Employee</span>
@@ -348,7 +348,7 @@ export default function Dashboard() {
             <Button 
               className="h-16 flex flex-col gap-2" 
               variant="outline"
-              onClick={() => navigate('/companies/new')}
+              onClick={() => navigate('./companies')}
             >
               <Building2 className="h-5 w-5" />
               <span className="text-sm">Register Company</span>
@@ -356,7 +356,7 @@ export default function Dashboard() {
             <Button 
               className="h-16 flex flex-col gap-2" 
               variant="outline"
-              onClick={() => navigate('/payroll/process')}
+              onClick={() => navigate('./generate-payroll')}
             >
               <DollarSign className="h-5 w-5" />
               <span className="text-sm">Process Payroll</span>

@@ -282,7 +282,7 @@ const JobApplicationForm = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="linkedinProfile">LinkedIn Profile</Label>
+                <Label htmlFor="linkedinProfile">LinkedIn Profile(optional)</Label>
                 <Input
                   id="linkedinProfile"
                   value={formData.linkedinProfile}
@@ -291,7 +291,7 @@ const JobApplicationForm = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="portfolioWebsite">Portfolio Website</Label>
+                <Label htmlFor="portfolioWebsite">Portfolio Website(optional)</Label>
                 <Input
                   id="portfolioWebsite"
                   value={formData.portfolioWebsite}
@@ -403,3 +403,4 @@ const JobApplicationForm = () => {
 };
 
 export default JobApplicationForm;
+
