@@ -10,7 +10,8 @@ import {
   Settings,
   Briefcase,
   FileText,
-  Calendar
+  Calendar,
+  Clock // Added for attendance
 } from "lucide-react"
 import { ChevronDown } from 'lucide-react';
 import { NavLink, useLocation } from "react-router-dom"
@@ -32,6 +33,7 @@ const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Companies", url: "/dashboard/companies", icon: Building2 },
   { title: "Employees", url: "/dashboard/employees", icon: Users },
+  { title: "Attendance", url: "/dashboard/attendance", icon: Clock }, // Added attendance
   { title: "Payroll", url: "/dashboard/payroll", icon: CreditCard },
   { title: "Leave Management", url: "/dashboard/leave-management", icon: Calendar },
   { title: "Applicants", url: "/dashboard/applicants", icon: UserPlus },
@@ -75,7 +77,7 @@ export function AppSidebar() {
       </SidebarHeader>
       
       <SidebarContent className="p-4">
-        <div className="mb-6">
+        <div className="mb-3">
           <div className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">
             Main
           </div>

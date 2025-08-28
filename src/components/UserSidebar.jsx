@@ -8,7 +8,8 @@ import {
   Briefcase,
   LogOut,
   Building2,
-  ChevronDown
+  ChevronDown,
+  Clock // Added for attendance
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const mainItems = [
   { title: "Dashboard", url: "/user-dashboard", icon: Home },
+  { title: "Attendance", url: "/user-dashboard/attendance", icon: Clock }, // Added attendance
   { 
     title: "Leave", 
     url: "/user-dashboard/leave", 
